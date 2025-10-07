@@ -1,0 +1,7 @@
+{
+    "team_unique_code": "hefeng_test_pih", 
+    "camera_topic": "/camera/camera/color/image_raw",
+    "file_dir": "/home/yitingchen/manipulation_net/test/video/",
+    "autonomy_level": 2
+}
+  
