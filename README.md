@@ -24,7 +24,7 @@ The mnet-client is a **middle layer** between the **robotic system** and the **m
 
 1. **collect** authentic manipulation performance on standardized task setups and upload it to the server for comparable research;
 
-2. **deliver** task instructions from the server to the robotic system in real-time, this could involves language/visual prompts, task-specific instructions, and more;
+2. **deliver** task instructions from the server to the robotic system in real-time, this could involve language/visual prompts, task-specific instructions, and more;
 
 3. **report** task execution and human intervention logs from the robotic system to the server in real-time to better describe the manipulation performance.
 
