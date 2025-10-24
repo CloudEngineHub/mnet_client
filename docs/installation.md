@@ -69,3 +69,13 @@ cd ..
 catkin_make
 ```
 
+
+
+## Update your Client
+
+Enter your mnet-client package and do:
+
+```
+git pull
+git submodule update --init --recursive 
+```
