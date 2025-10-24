@@ -16,6 +16,8 @@ Select your interested benchmark task [here](https://manipulation-net.org/index.
 
 ## News
 
+[**2025-10-24**] We provided [example tasks](https://github.com/ManipulationNet/mnet_block_arrangement_example_instructions) for the block arrangement benchmark, and updated the mnet-client. Please update your client before use.
+
 [**2025-10-08**] Project released at [manipulation-net.org](https://manipulation-net.org/).
 
 
