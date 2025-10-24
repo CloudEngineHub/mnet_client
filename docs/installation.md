@@ -59,7 +59,7 @@ cd ros2_ws/src
 Clone the repository in your ROS 2 Workspace
 
 ```
-git clone --branch ros_2 https://github.com/ManipulationNet/mnet_client.git
+git clone --branch ros_2 https://github.com/ManipulationNet/mnet_client.git --recursive
 ```
 
 Compile the ROS 2 workspace
