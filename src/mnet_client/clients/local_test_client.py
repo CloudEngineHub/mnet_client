@@ -7,6 +7,7 @@ import sys
 import time
 import json
 import select
+import random
 import threading
 from datetime import datetime
 
@@ -164,11 +165,37 @@ class LocalTestClient(BaseClient):
                 with open(task_metadata_file_path, "r") as f:
                     self.task_metadata = json.load(f)
             else:
-                rospy.logerr(f"Task metadata file not found: {task_metadata_file_path}")
+                self.get_logger().error(
+                    f"Task metadata file not found: {task_metadata_file_path}"
+                )
                 exit()
 
+            entry_level_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "entry"}
+            easy_level_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "easy"}
+            medium_level_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "medium"}
+            hard_level_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "hard"}
+            
+            def load_random_task(task_id: str, task_pool: dict) -> dict:
+                if task_id.startswith("L"):
+                    task_rnd = random.choice(list({k: v for k, v in task_pool.items() if v.get("mode") == "L"}.keys()))
+                elif task_id.startswith("VL"):
+                    task_rnd = random.choice(list({k: v for k, v in task_pool.items() if v.get("mode") == "VL"}.keys()))
+                else:
+                    task_rnd = random.choice(list({k: v for k, v in task_pool.items() if v.get("mode") == "V"}.keys()))
+                task = task_pool.pop(task_rnd)
+                return task
+            
             for task_id in self.scoring_details_list:
-                language_instruction = self.task_metadata[task_id]["description"]
+                if self.scoring_details[task_id] == 1:
+                    task = load_random_task(task_id, entry_level_tasks)
+                elif self.scoring_details[task_id] == 2:
+                    task = load_random_task(task_id, easy_level_tasks)
+                elif self.scoring_details[task_id] == 5:
+                    task = load_random_task(task_id, medium_level_tasks)
+                elif self.scoring_details[task_id] == 10:
+                    task = load_random_task(task_id, hard_level_tasks)
+
+                language_instruction = task["description"]
                 self.language_instructions.append(
                     language_instruction if language_instruction is not None else ""
                 )
@@ -179,7 +206,7 @@ class LocalTestClient(BaseClient):
                     "assets",
                     f"{self.task_name}",
                     "images",
-                    f"{self.task_metadata[task_id]['image']}",
+                    f"{task['image']}",
                 )
                 self.vision_instructions.append(
                     cv2.imread(image_path, cv2.IMREAD_COLOR)
