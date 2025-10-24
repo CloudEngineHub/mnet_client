@@ -59,7 +59,7 @@ cd catkin_ws/src
 Clone the repository in your ROS 1 workspace
 
 ```
-git clone --branch ros_1 https://github.com/ManipulationNet/mnet_client.git
+git clone --branch ros_1 https://github.com/ManipulationNet/mnet_client.git --recursive
 ```
 
 Compile the ROS 1 workspace
