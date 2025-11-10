@@ -44,7 +44,7 @@ class LocalTestClient(BaseClient):
             "Choose the test task among {peg_in_hole, block_arrangement} for evaluation: "
         )  # For local testing, we need the user to input the task name
         if task_name not in ["peg_in_hole", "block_arrangement"]:
-            rospy.logerr(f"Invalid task name: {task_name}")
+            self.logger.error(f"Invalid task name: {task_name}")
             exit()
 
         self.task_name = task_name
@@ -145,7 +145,7 @@ class LocalTestClient(BaseClient):
             with open(scoring_details_file_path, "r") as f:
                 self.scoring_details = json.load(f)
         else:
-            rospy.logerr(f"Scoring details file not found: {scoring_details_file_path}")
+            self.logger.error(f"Scoring details file not found: {scoring_details_file_path}")
             exit()
 
         self.scoring_details_list = list(self.scoring_details.keys())
@@ -165,7 +165,7 @@ class LocalTestClient(BaseClient):
                 with open(task_metadata_file_path, "r") as f:
                     self.task_metadata = json.load(f)
             else:
-                self.get_logger().error(
+                self.logger.error(
                     f"Task metadata file not found: {task_metadata_file_path}"
                 )
                 exit()
