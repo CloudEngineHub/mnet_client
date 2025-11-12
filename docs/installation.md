@@ -42,8 +42,20 @@ mnet-client is distributed as a ROS 1/2 package via source code.
 
 * [Pydantic](https://docs.pydantic.dev/latest/) (>=2.0) for message transfer
 
-  ```shell
+  ```
   pip install pydantic>=2.0
+  ```
+
+* [PyBullet](https://pybullet.org/wordpress/) (3.2.7 recommended, other versions could also work) for scene rendering
+
+  ```
+  pip install pybullet
+  ```
+
+* [pupil-apriltags](https://pypi.org/project/pupil-apriltags/) (Python bindings for the [apriltags3](https://april.eecs.umich.edu/software/apriltag) library)
+
+  ```shell
+  pip install pupil-apriltags
   ```
 
   

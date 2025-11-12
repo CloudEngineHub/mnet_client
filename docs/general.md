@@ -44,9 +44,9 @@ In some benchmark tasks, there could be a requirement to ask for demonstrations 
 
 ## Autonomy Level
 
-- **Full Autonomous:** The robot must complete the entire task without human intervention. For example, the manipulation system is required to autonomously call the ROS services to report execution status and check the corresponding ROS topic to receive the task instructions.
-- **Human-in-the-loop:** Humans may provide high-level assistance, for example, instructing the system to skip or confirm the completeness of a task, but cannot issue direct action control commands. Each human intervention is required to be logged to better describe the manipulation process. See more details about how to log human assistance here.
-- **Teleoperation:** Humans are allowed to directly send action commands to the robot through any type of teleoperation. 
+- **Full Autonomous (2):** The robot must complete the entire task without human intervention. For example, the manipulation system is required to autonomously call the ROS services to report execution status and check the corresponding ROS topic to receive the task instructions.
+- **Human-in-the-loop (1):** Humans may provide high-level assistance, for example, instructing the system to skip or confirm the completeness of a task, but cannot issue direct action control commands. Each human intervention is required to be logged to better describe the manipulation process. See more details about how to log human assistance here.
+- **Teleoperation (0):** Humans are allowed to directly send action commands to the robot through any type of teleoperation. 
 
 
 
@@ -75,7 +75,8 @@ To verify your identity, benchmark task, and register your submission, please pr
 You will be asked to input the following information correctly:
 
 - **team_unique_code**: The unique code received from your registration that represents your team identity and the benchmark task
-- **camera_topic**: The ROS topic that publishes the video frames from your local camera (the minimum FPS requirement is 25)
+- **camera_image_topic**: The ROS topic (sensor_msg/Image) that publishes the video frames from your local camera (the minimum FPS requirement is 25)
+- **camera_info_topic**: The ROS topic (sensor_msg/CameraInfo) that publishes the camera's intrinsic matrix, height and width information. Required for task grasping_in_clutter.
 - **file_dir**: The local directory path to save your performance video and log file. An absolute path is recommended.
 - **autonomy_level**:  0 for tele-operation, 1 for human-in-the-loop and 2 for fully autonomous as defined above.
 
