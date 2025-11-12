@@ -136,7 +136,7 @@ class BaseClient(Node, ABC):
         )
         self.camera_verified = False
         self.calculate_camera_fps()
-        if self.calibrated_fps is None or self.calibrated_fps < 10:
+        if self.calibrated_fps is None or self.calibrated_fps < 25:
             self.get_logger().error(
                 f"Camera FPS is too low (minimum 25, current: {self.calibrated_fps}), please improve your camera setup."
             )
