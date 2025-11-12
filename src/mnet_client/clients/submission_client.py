@@ -20,6 +20,7 @@ try:
     from sensor_msgs.msg import Image
     from std_msgs.msg import String, Bool
     from std_srvs.srv import Trigger, TriggerResponse
+    from mnet_client.tasks import detect_apriltag
     from mnet_client.base import (
         BaseClient,
         SERVER_IP,
@@ -27,6 +28,9 @@ try:
         ServerResponse,
         HEADER_FMT,
         HEADER_SIZE,
+        OVERLAY_ENABLED_TASKS,
+        AUTONOMOUS_ONLY_TASKS,
+        APRILTAG_ENABLED_TASKS,
     )
     from mnet_client.base import (
         PingRequest,
@@ -38,6 +42,7 @@ try:
         InstructionRequest,
         AssistanceRequest,
         SubmissionRequest,
+        CameraConfigRequest
     )
 except ImportError as e:
     print(f"Error importing modules: {e}")
@@ -177,6 +182,7 @@ class SubmissionClient(BaseClient):
         Callback function for the camera topic
         """
         if not self.is_recording:
+            self.buffer_frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             return
 
         try:
@@ -483,12 +489,13 @@ class SubmissionClient(BaseClient):
             self.scoring_details_list = list(self.scoring_details.keys())
             self.total_tasks_number = len(self.scoring_details_list)
             self.instruction_enabled = task_response.instruction_enabled
+            self.vision_instruction_overlay = task_response.overlay_enabled                        
             self.assistance_allowed = task_response.assistance_allowed
             if task_response.message:
                 self.logger.info("Server message: {}".format(task_response.message))
 
-        if self.benchmark_name == "block_arrangement" and (self.autonomy_level != 2):
-            self.logger.error("Block arrangement task only supports the fully autonomous mode, submission will exit")
+        if self.benchmark_name in AUTONOMOUS_ONLY_TASKS and (self.autonomy_level != 2):
+            self.logger.error(f"{self.benchmark_name} task only supports the fully autonomous mode, submission will exit")
             exit()
             
         if self.instruction_enabled:
@@ -498,6 +505,42 @@ class SubmissionClient(BaseClient):
             self.vision_pub = rospy.Publisher(
                 "/mnet_client/current_vision_instruction", Image, queue_size=10
             )
+
+            if self.vision_instruction_overlay:
+                apriltag_detected = detect_apriltag(self.buffer_frame, self.cam_K)
+                if not apriltag_detected:
+                    self.logger.error(
+                        "AprilTag is not detected. Please ensure the AprilTag is clearly visible in the camera view from the very beginning."
+                    )
+                    exit()
+                else:
+                    self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv = apriltag_detected
+                    self.logger.info(
+                        f"AprilTag is detected. Tag ID: {self.tag_id}"
+                    )
+              
+                self.send_request(
+                    CameraConfigRequest(
+                        type="camera_config_request",
+                        task_config={
+                            "cam_K": self.cam_K.tolist(),
+                            "cam_H": self.cam_height,
+                            "cam_W": self.cam_width,
+                            "center": self.det.center.tolist(),
+                            "tag_id": self.tag_id,
+                            "corners": self.corners.tolist(),
+                            "R_cw_cv": self.R_cw_cv.tolist(),
+                            "t_cw_cv": self.t_cw_cv.tolist(),
+                        }
+                    )
+                )
+                camera_config_response = self.receive_response()
+                if camera_config_response.type == "camera_config_response" and camera_config_response.success:
+                    self.logger.info("Camera setup has been updated to the server")
+                else:
+                    self.logger.error("Failed to update the camera setup to the server, please contact the organizers")
+                    exit()
+
             self.send_request(
                 InstructionRequest(
                     type="instruction_request",
@@ -969,11 +1012,19 @@ class SubmissionClient(BaseClient):
 
             self.language_pub.publish(String(data=current_language_instruction))
             if current_vision_instruction is not None:
-                self.vision_pub.publish(
-                    self.bridge.cv2_to_imgmsg(
-                        current_vision_instruction, encoding="bgr8"
+                if not self.vision_instruction_overlay:
+                    self.vision_pub.publish(
+                        self.bridge.cv2_to_imgmsg(
+                            current_vision_instruction, encoding="bgr8"
+                        )
                     )
-                )
+                else:
+                    self.vision_pub.publish(
+                        self.bridge.cv2_to_imgmsg(
+                            self.overlay_rgba_on_bgr(self.buffer_frame, current_vision_instruction), encoding="bgr8"
+                        )
+                    )
+ 
             else:
                 no_image = Image()
                 no_image.header.stamp = rospy.Time.now()
@@ -984,7 +1035,7 @@ class SubmissionClient(BaseClient):
                 no_image.step = 0
                 no_image.data = []  # empty array
                 self.vision_pub.publish(no_image)
-            time.sleep(1)
+            time.sleep(0.5)
 
     def connection_monitor_thread(self):
         """

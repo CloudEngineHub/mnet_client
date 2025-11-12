@@ -1,7 +1,8 @@
 {
-    "team_unique_code": , 
-    "camera_topic":,
-    "file_dir": ,
-    "autonomy_level": 
+    "team_unique_code": "YOUR_TEAM_UNIQUE_CODE", 
+    "camera_image_topic": "YOUR_CAMERA_IMAGE_TOPIC",
+    "camera_info_topic": "YOUR_CAMERAINFO_TOPIC",
+    "file_dir": "YOUR_ABSOLUTE_FILE_DIR",
+    "autonomy_level": "INPUT {0, 1, 2} BASED ON YOUR AUTONOMY LEVEL"
 }
   

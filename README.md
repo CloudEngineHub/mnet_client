@@ -13,6 +13,8 @@ Select your interested benchmark task [here](https://manipulation-net.org/index.
 
 ## News
 
+[**2025-11-12**] The mnet-client has been updated for the grasping_in_clutter task (CameraInfo will be required). Please check the newest docs, **update** your environment and your client before use.
+
 [**2025-10-24**] We provided [example tasks](https://github.com/ManipulationNet/mnet_block_arrangement_example_instructions) for the block arrangement benchmark, and updated the mnet-client. Please [update](https://mnet-client.readthedocs.io/ros_1/installation.html#update-your-client) your client before use.
 
 [**2025-10-08**] Project released at [manipulation-net.org](https://manipulation-net.org/).

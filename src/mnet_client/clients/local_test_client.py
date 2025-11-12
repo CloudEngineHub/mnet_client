@@ -15,17 +15,15 @@ try:
     import cv2
     import rospy
     from sensor_msgs.msg import Image
-    from mnet_client.base import BaseClient
     from std_msgs.msg import String, Bool
     from std_srvs.srv import Trigger, TriggerResponse
+    from mnet_client.base import BaseClient, AVAILABLE_TASKS, INSTRUCTION_ENABLED_TASKS, OVERLAY_ENABLED_TASKS, AUTONOMOUS_ONLY_TASKS, APRILTAG_ENABLED_TASKS
+    from mnet_client.tasks import detect_apriltag, MnetSceneReplica
+
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Please ensure all required modules are installed and properly configured.")
     exit()
-
-
-AVAILABLE_TASKS = ["peg_in_hole", "block_arrangement"]
-INSTRUCTION_ENABLED_TASKS = ["block_arrangement"]
 
 
 class LocalTestClient(BaseClient):
@@ -41,9 +39,9 @@ class LocalTestClient(BaseClient):
 
         # Initialize scoring details
         task_name = input(
-            "Choose the test task among {peg_in_hole, block_arrangement} for evaluation: "
+            "Choose the test task among {peg_in_hole, block_arrangement, grasping_in_clutter} for evaluation: "
         )  # For local testing, we need the user to input the task name
-        if task_name not in ["peg_in_hole", "block_arrangement"]:
+        if task_name not in AVAILABLE_TASKS:
             self.logger.error(f"Invalid task name: {task_name}")
             exit()
 
@@ -53,10 +51,40 @@ class LocalTestClient(BaseClient):
         self.scoring_details_list = None
         self.language_instructions = []
         self.vision_instructions = []
+
         if self.task_name in INSTRUCTION_ENABLED_TASKS:
             self.instruction_enabled = True
         else:
             self.instruction_enabled = False
+
+
+        if self.task_name in OVERLAY_ENABLED_TASKS:
+            self.overlay_enabled = True
+        else:
+            self.overlay_enabled = False
+
+        if self.task_name in APRILTAG_ENABLED_TASKS:
+            if self.cam_K is None or self.cam_K.shape != (3, 3):
+                self.logger.error(
+                    "Camera info is not properly loaded. Please check your camera setup."
+                )
+                exit()
+            self.logger.info(
+                "AprilTag is required for the task."
+            )
+
+            apriltag_detected = detect_apriltag(self.buffer_frame, self.cam_K)
+            if not apriltag_detected:
+                self.logger.error(
+                    "AprilTag is not detected. Please ensure the AprilTag is visible in the camera image from the very beginning."
+                )
+                exit()
+            else:
+                self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv = apriltag_detected
+                self.logger.info(
+                    f"AprilTag is detected. Tag ID: {self.tag_id}"
+                )
+
         self.get_task_details()
 
         self.finished_tasks = []
@@ -80,7 +108,7 @@ class LocalTestClient(BaseClient):
             f"Mode: {'Teleop' if self.autonomy_level==0 else 'Human-in-the-loop' if self.autonomy_level==1 else 'Autonomous'}"
         )
 
-        if task_name == "block_arrangement" and (
+        if self.task_name in AUTONOMOUS_ONLY_TASKS and (
             self.autonomy_level == 1 or self.autonomy_level == 0
         ):
             self.logger.info(
@@ -214,11 +242,51 @@ class LocalTestClient(BaseClient):
                     else None
                 )
 
+        elif self.task_name in ["grasping_in_clutter"]:
+            self.instruction_enabled = True
+            scene_render = MnetSceneReplica(self.package_path, self.cam_K, self.cam_width, self.cam_height, self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv)
+            if os.path.exists(task_metadata_file_path):
+                with open(task_metadata_file_path, "r") as f:
+                    self.task_metadata = json.load(f)
+            else:
+                self.logger.error(
+                    f"Task metadata file not found: {task_metadata_file_path}"
+                )
+                exit()
+
+            def load_random_task(task_pool: dict) -> dict:
+                key = random.choice(list(task_pool.keys()))
+                value = task_pool.pop(key)
+                return value
+            
+            pack_3_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "3"}
+            pack_4_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "4"}
+            pack_5_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "5"}
+            
+            for idx in range(len(self.scoring_details_list)):
+                if idx in [0, 1, 2, 3, 4]:
+                    task = load_random_task(pack_3_tasks)
+                elif idx in [5, 6, 7, 8, 9]:
+                    task = load_random_task(pack_4_tasks)
+                else:
+                    task = load_random_task(pack_5_tasks)
+
+                self.language_instructions.append("")
+                scene_id = task["layout"]
+                scene_render.load_scene(scene_id)
+                rendered_scene = scene_render.render_scene_image()
+                rendered_scene_with_axis = scene_render.draw_apriltag_frame(rendered_scene)
+                self.vision_instructions.append(
+                    rendered_scene_with_axis
+                )
+
+
     def camera_callback(self, msg: Image) -> None:
         """
         Callback function to handle the camera topic
         """
         if not self.is_recording:
+            self.buffer_frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             return
 
         try:
@@ -544,11 +612,18 @@ class LocalTestClient(BaseClient):
 
             self.language_pub.publish(String(data=current_language_instruction))
             if current_vision_instruction is not None:
-                self.vision_pub.publish(
-                    self.bridge.cv2_to_imgmsg(
-                        current_vision_instruction, encoding="bgr8"
+                if not self.overlay_enabled:
+                    self.vision_pub.publish(
+                        self.bridge.cv2_to_imgmsg(
+                            current_vision_instruction, encoding="bgr8"
+                        )
                     )
-                )
+                else:
+                    self.vision_pub.publish(
+                        self.bridge.cv2_to_imgmsg(
+                            self.overlay_rgba_on_bgr(self.buffer_frame, current_vision_instruction), encoding="bgr8"
+                        )
+                    )
             else:
                 no_image = Image()
                 no_image.header.stamp = rospy.Time.now()
@@ -559,7 +634,7 @@ class LocalTestClient(BaseClient):
                 no_image.step = 0
                 no_image.data = []  # empty array
                 self.vision_pub.publish(no_image)
-            time.sleep(1)
+            time.sleep(0.5)
 
     def connection_monitor_thread(self):
         """

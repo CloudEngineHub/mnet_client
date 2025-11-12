@@ -21,8 +21,10 @@ try:
     import numpy as np
     from tqdm import tqdm
     from cv_bridge import CvBridge
-    from std_srvs.srv import Trigger, TriggerResponse
     from sensor_msgs.msg import Image
+    from sensor_msgs.msg import CameraInfo
+    from std_srvs.srv import Trigger, TriggerResponse
+
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Please ensure all required modules are installed and properly configured.")
@@ -32,6 +34,11 @@ except ImportError as e:
 PACKAGE_NAME = "mnet_client"
 SERVER_IP = "3.21.8.9"
 SERVER_PORT = 50716
+AVAILABLE_TASKS = ["peg_in_hole", "block_arrangement", "grasping_in_clutter"]
+INSTRUCTION_ENABLED_TASKS = ["block_arrangement", "grasping_in_clutter"]
+OVERLAY_ENABLED_TASKS = ["grasping_in_clutter"]
+AUTONOMOUS_ONLY_TASKS = ["block_arrangement", "grasping_in_clutter"]
+APRILTAG_ENABLED_TASKS = ["grasping_in_clutter"]
 
 
 def get_package_path(package_name):
@@ -106,8 +113,10 @@ class BaseClient(ABC):
 
         # Initialize submission details
         self.team_unique_code = self.team_config["team_unique_code"]
-        self.camera_topic = self.team_config["camera_topic"]
+        self.camera_topic = self.team_config["camera_image_topic"]
+        self.camera_info_topic = self.team_config["camera_info_topic"]
         self.nvenc_enabled = False
+        self.camera_info_loaded = False
 
         if not self.topic_has_publishers():
             rospy.logerr(f"Camera topic {self.camera_topic} has no publishers")
@@ -154,6 +163,25 @@ class BaseClient(ABC):
             )
             exit()
 
+        # Get camera info
+        self.cam_K = None
+        self.cam_width = None
+        self.cam_height = None
+        self.det = None
+        self.tag_id = None
+        self.corners = None
+        self.R_cw_cv = None
+        self.t_cw_cv = None
+
+        try:
+            self.cam_K, self.cam_width, self.cam_height = self.get_camera_info()
+            self.camera_info_loaded = True
+        except TimeoutError as e:
+            rospy.logerr(f"{e}, this could affect the execution of the task: grasping_in_clutter")
+        except AssertionError as e:
+            rospy.logerr(f"Camera info does not match the image size: {e}")
+            exit()
+
         # Initialize intruction status:
         self.code_writing_awaiting = True
         self.detail_demonstration_awaiting = True
@@ -167,6 +195,8 @@ class BaseClient(ABC):
 
         self.current_language_instruction = None
         self.current_vision_instruction = None
+        self.vision_instruction_overlay = False  # if overlay the vision instruction with the camera image
+
 
     def topic_has_publishers(self) -> bool:
         """
@@ -180,6 +210,38 @@ class BaseClient(ABC):
             if topic == self.camera_topic:
                 return len(nodes) > 0
         return False
+
+    def get_camera_info(self, timeout: float = 2.0):
+        """
+        Get the camera intrinsic matrix from the camera info topic
+        """
+        data = {'K': None, 'width': None, 'height': None}
+
+        def camera_info_callback(msg: CameraInfo):
+            data['K'] = np.array(msg.K).reshape(3, 3)
+            data['width'] = msg.width
+            data['height'] = msg.height
+            rospy.loginfo(f"Received CameraInfo from {self.camera_info_topic}")
+
+        self.camera_info_sub = rospy.Subscriber(self.camera_info_topic, CameraInfo, camera_info_callback)
+        end_time = rospy.Time.now() + rospy.Duration(timeout)
+        while not rospy.is_shutdown() and rospy.Time.now() < end_time:
+            rospy.sleep(0.1)
+            if data['K'] is not None:
+                break
+
+        self.camera_info_sub.unregister()
+
+        if data['K'] is None:
+            raise TimeoutError(f"No CameraInfo received on {self.camera_info_topic} within {timeout}s")
+
+        W, H = self.buffer_frame.shape[1], self.buffer_frame.shape[0]  # Get the image size
+        assert H == data['height'] and W == data['width'], "Camera info does not match the image size"
+
+        if data['K'] is None:
+            raise TimeoutError(f"No CameraInfo received on {self.camera_info_topic} within {timeout}s")
+
+        return data['K'], data['width'], data['height']  
 
     def check_ffmpeg_encoder(self, encoder_name: str) -> bool:
         """
@@ -328,12 +390,20 @@ class BaseClient(ABC):
         print("│ " + text + " │")
         print("└" + "─" * (length + 2) + "┘")
 
-    def decode_base64_image(self, base64_image: str):
+    def decode_base64_image_rgb(self, base64_image: str):
         """
         Decode a base64 image
         """
         return cv2.imdecode(
             np.frombuffer(base64.b64decode(base64_image), np.uint8), cv2.IMREAD_COLOR
+        )
+
+    def decode_base64_image_rgba(self, base64_image: str):
+        """
+        Decode a base64 image
+        """
+        return cv2.imdecode(
+            np.frombuffer(base64.b64decode(base64_image), np.uint8), cv2.IMREAD_UNCHANGED
         )
 
     def parse_instruction(self, instruction):
@@ -343,9 +413,14 @@ class BaseClient(ABC):
         self.current_language_instruction = (
             instruction.language if instruction.language else ""
         )
-        self.current_vision_instruction = (
-            self.decode_base64_image(instruction.vision) if instruction.vision else None
-        )
+        if not self.vision_instruction_overlay:
+            self.current_vision_instruction = (
+                self.decode_base64_image_rgb(instruction.vision) if instruction.vision else None
+            )
+        else:
+            self.current_vision_instruction = (
+                self.decode_base64_image_rgba(instruction.vision) if instruction.vision else None
+            )
 
     def add_timestamp_to_image(self, cv_image):
         """
@@ -366,6 +441,26 @@ class BaseClient(ABC):
         )
         return cv_image
 
+
+    def overlay_rgba_on_bgr(self, bg_bgr, fg_rgba):
+        """
+        Overlay an RGBA image (foreground) onto a BGR image (background) and return the resulting BGR image
+        """
+        # Resize foreground to match background
+        fg_rgba = cv2.resize(fg_rgba, (bg_bgr.shape[1], bg_bgr.shape[0]), interpolation=cv2.INTER_AREA)
+
+        fg_rgb = fg_rgba[:, :, :3].astype(float)
+        alpha = fg_rgba[:, :, 3].astype(float) / 255.0
+        bg_rgb = cv2.cvtColor(bg_bgr, cv2.COLOR_BGR2RGB).astype(float)
+
+        blended_rgb = alpha[..., None] * fg_rgb + (1 - alpha[..., None]) * bg_rgb
+        blended_rgb = np.clip(blended_rgb, 0, 255).astype(np.uint8)
+
+        blended_bgr = cv2.cvtColor(blended_rgb, cv2.COLOR_RGB2BGR)
+
+        return blended_bgr
+
+        
     @abstractmethod
     def camera_callback(self, msg: Image) -> None:
         """

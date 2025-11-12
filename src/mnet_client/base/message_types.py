@@ -53,6 +53,7 @@ class TaskResponse(BaseModel):
     task_details: Dict[str, Any]
     instruction_enabled: bool
     assistance_allowed: bool
+    overlay_enabled: bool
     message: Optional[str] = None
 
 
@@ -192,6 +193,23 @@ class InstructionResponse(BaseModel):
     language: Optional[str] = None
 
 
+class CameraConfigRequest(BaseModel):
+    """
+    Camera config request
+    """
+    type: Literal["camera_config_request"]
+    task_config: dict
+
+
+class CameraConfigResponse(BaseModel):
+    """
+    Camera config response
+    """
+    type: Literal["camera_config_response"]
+    success: bool
+    message: str
+
+
 ServerResponse = TypeAdapter(
     Union[
         LoginResponse,
@@ -203,5 +221,6 @@ ServerResponse = TypeAdapter(
         SubmissionResponse,
         ErrorResponse,
         PingResponse,
+        CameraConfigResponse,
     ]
 )
