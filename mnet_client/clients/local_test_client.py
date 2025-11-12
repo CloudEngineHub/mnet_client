@@ -18,7 +18,14 @@ try:
     from sensor_msgs.msg import Image
     from std_msgs.msg import String, Bool
     from std_srvs.srv import Trigger
-    from mnet_client.base import BaseClient, AVAILABLE_TASKS, INSTRUCTION_ENABLED_TASKS, OVERLAY_ENABLED_TASKS, AUTONOMOUS_ONLY_TASKS, APRILTAG_ENABLED_TASKS
+    from mnet_client.base import (
+        BaseClient,
+        AVAILABLE_TASKS,
+        INSTRUCTION_ENABLED_TASKS,
+        OVERLAY_ENABLED_TASKS,
+        AUTONOMOUS_ONLY_TASKS,
+        APRILTAG_ENABLED_TASKS,
+    )
     from mnet_client.tasks import detect_apriltag, MnetSceneReplica
 
 except Exception as e:
@@ -70,9 +77,7 @@ class LocalTestClient(BaseClient):
                     "Camera info is not properly loaded. Please check your camera setup."
                 )
                 exit()
-            self.logger.info(
-                "AprilTag is required for the task."
-            )
+            self.logger.info("AprilTag is required for the task.")
 
             apriltag_detected = detect_apriltag(self.buffer_frame, self.cam_K)
             if not apriltag_detected:
@@ -81,10 +86,10 @@ class LocalTestClient(BaseClient):
                 )
                 exit()
             else:
-                self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv = apriltag_detected
-                self.logger.info(
-                    f"AprilTag is detected. Tag ID: {self.tag_id}"
+                self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv = (
+                    apriltag_detected
                 )
+                self.logger.info(f"AprilTag is detected. Tag ID: {self.tag_id}")
 
         self.get_task_details()
 
@@ -190,21 +195,55 @@ class LocalTestClient(BaseClient):
                 )
                 exit()
 
-            entry_level_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "entry"}
-            easy_level_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "easy"}
-            medium_level_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "medium"}
-            hard_level_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "hard"}
-            
+            entry_level_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "entry"
+            }
+            easy_level_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "easy"
+            }
+            medium_level_tasks = {
+                k: v
+                for k, v in self.task_metadata.items()
+                if v.get("level") == "medium"
+            }
+            hard_level_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "hard"
+            }
+
             def load_random_task(task_id: str, task_pool: dict) -> dict:
                 if task_id.startswith("L"):
-                    task_rnd = random.choice(list({k: v for k, v in task_pool.items() if v.get("mode") == "L"}.keys()))
+                    task_rnd = random.choice(
+                        list(
+                            {
+                                k: v
+                                for k, v in task_pool.items()
+                                if v.get("mode") == "L"
+                            }.keys()
+                        )
+                    )
                 elif task_id.startswith("VL"):
-                    task_rnd = random.choice(list({k: v for k, v in task_pool.items() if v.get("mode") == "VL"}.keys()))
+                    task_rnd = random.choice(
+                        list(
+                            {
+                                k: v
+                                for k, v in task_pool.items()
+                                if v.get("mode") == "VL"
+                            }.keys()
+                        )
+                    )
                 else:
-                    task_rnd = random.choice(list({k: v for k, v in task_pool.items() if v.get("mode") == "V"}.keys()))
+                    task_rnd = random.choice(
+                        list(
+                            {
+                                k: v
+                                for k, v in task_pool.items()
+                                if v.get("mode") == "V"
+                            }.keys()
+                        )
+                    )
                 task = task_pool.pop(task_rnd)
                 return task
-            
+
             for task_id in self.scoring_details_list:
                 if self.scoring_details[task_id] == 1:
                     task = load_random_task(task_id, entry_level_tasks)
@@ -234,7 +273,17 @@ class LocalTestClient(BaseClient):
 
         elif self.task_name in ["grasping_in_clutter"]:
             self.instruction_enabled = True
-            scene_render = MnetSceneReplica(self.package_path, self.cam_K, self.cam_width, self.cam_height, self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv)
+            scene_render = MnetSceneReplica(
+                self.package_path,
+                self.cam_K,
+                self.cam_width,
+                self.cam_height,
+                self.det,
+                self.tag_id,
+                self.corners,
+                self.R_cw_cv,
+                self.t_cw_cv,
+            )
             if os.path.exists(task_metadata_file_path):
                 with open(task_metadata_file_path, "r") as f:
                     self.task_metadata = json.load(f)
@@ -248,11 +297,17 @@ class LocalTestClient(BaseClient):
                 key = random.choice(list(task_pool.keys()))
                 value = task_pool.pop(key)
                 return value
-            
-            pack_3_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "3"}
-            pack_4_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "4"}
-            pack_5_tasks = {k: v for k, v in self.task_metadata.items() if v.get("level") == "5"}
-            
+
+            pack_3_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "3"
+            }
+            pack_4_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "4"
+            }
+            pack_5_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "5"
+            }
+
             for idx in range(len(self.scoring_details_list)):
                 if idx in [0, 1, 2, 3, 4]:
                     task = load_random_task(pack_3_tasks)
@@ -265,11 +320,10 @@ class LocalTestClient(BaseClient):
                 scene_id = task["layout"]
                 scene_render.load_scene(scene_id)
                 rendered_scene = scene_render.render_scene_image()
-                rendered_scene_with_axis = scene_render.draw_apriltag_frame(rendered_scene)
-                self.vision_instructions.append(
-                    rendered_scene_with_axis
+                rendered_scene_with_axis = scene_render.draw_apriltag_frame(
+                    rendered_scene
                 )
-
+                self.vision_instructions.append(rendered_scene_with_axis)
 
     def camera_callback(self, msg: Image) -> None:
         """
@@ -590,7 +644,10 @@ class LocalTestClient(BaseClient):
                 else:
                     self.vision_pub.publish(
                         self.bridge.cv2_to_imgmsg(
-                            self.overlay_rgba_on_bgr(self.buffer_frame, current_vision_instruction), encoding="bgr8"
+                            self.overlay_rgba_on_bgr(
+                                self.buffer_frame, current_vision_instruction
+                            ),
+                            encoding="bgr8",
                         )
                     )
             else:

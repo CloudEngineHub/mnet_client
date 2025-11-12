@@ -28,7 +28,7 @@ try:
         SERVER_PORT,
         ServerResponse,
         HEADER_FMT,
-        HEADER_SIZE, 
+        HEADER_SIZE,
         OVERLAY_ENABLED_TASKS,
         AUTONOMOUS_ONLY_TASKS,
         APRILTAG_ENABLED_TASKS,
@@ -43,7 +43,7 @@ try:
         InstructionRequest,
         AssistanceRequest,
         SubmissionRequest,
-        CameraConfigRequest
+        CameraConfigRequest,
     )
 
 except Exception as e:
@@ -211,7 +211,9 @@ class SubmissionClient(BaseClient):
                 # Hash code for the first frame
                 response = self.register_key_frame_hash()
                 if response is None:
-                    self.logger.error("Failed to verify the first frame from the camera")
+                    self.logger.error(
+                        "Failed to verify the first frame from the camera"
+                    )
                     self.video_writer = None
                     return
                 # Recording starts now
@@ -431,11 +433,17 @@ class SubmissionClient(BaseClient):
         Main function to run the submission client
         """
         # Send team ID to server and check if the submission is approved
-        self.logger.info("Do you accept the terms and conditions as detailed at https://manipulation-net.org/terms_and_conditions.html ? [yes/others]")
-        print("Please type in 'yes' and press 'Enter' to accept the terms and conditions OR type anything else and press 'Enter' to reject it.")
+        self.logger.info(
+            "Do you accept the terms and conditions as detailed at https://manipulation-net.org/terms_and_conditions.html ? [yes/others]"
+        )
+        print(
+            "Please type in 'yes' and press 'Enter' to accept the terms and conditions OR type anything else and press 'Enter' to reject it."
+        )
         user_input = sys.stdin.readline().strip()
         if user_input.upper() != "YES":
-            self.logger.info("You have not accepted the terms and conditions, exiting...")
+            self.logger.info(
+                "You have not accepted the terms and conditions, exiting..."
+            )
             return
 
         with self._lock:
@@ -489,7 +497,9 @@ class SubmissionClient(BaseClient):
                 self.logger.info("Server message: {}".format(task_response.message))
 
         if self.benchmark_name == "block_arrangement" and (self.autonomy_level != 2):
-            self.logger.error("Block arrangement task only supports the fully autonomous mode, submission will exit")
+            self.logger.error(
+                "Block arrangement task only supports the fully autonomous mode, submission will exit"
+            )
             exit()
 
         if self.instruction_enabled:
@@ -508,11 +518,11 @@ class SubmissionClient(BaseClient):
                     )
                     exit()
                 else:
-                    self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv = apriltag_detected
-                    self.logger.info(
-                        f"AprilTag is detected. Tag ID: {self.tag_id}"
+                    self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv = (
+                        apriltag_detected
                     )
-              
+                    self.logger.info(f"AprilTag is detected. Tag ID: {self.tag_id}")
+
                 self.send_request(
                     CameraConfigRequest(
                         type="camera_config_request",
@@ -525,15 +535,20 @@ class SubmissionClient(BaseClient):
                             "corners": self.corners.tolist(),
                             "R_cw_cv": self.R_cw_cv.tolist(),
                             "t_cw_cv": self.t_cw_cv.tolist(),
-                        }
+                        },
                     )
                 )
 
                 camera_config_response = self.receive_response()
-                if camera_config_response.type == "camera_config_response" and camera_config_response.success:
+                if (
+                    camera_config_response.type == "camera_config_response"
+                    and camera_config_response.success
+                ):
                     self.logger.info("Camera setup has been updated to the server")
                 else:
-                    self.logger.error("Failed to update the camera setup to the server, please contact the organizers")
+                    self.logger.error(
+                        "Failed to update the camera setup to the server, please contact the organizers"
+                    )
                     exit()
 
             self.send_request(
@@ -558,7 +573,9 @@ class SubmissionClient(BaseClient):
                 exit()
 
         # Initialize human in the loop services
-        if (self.autonomy_level == 1 or self.autonomy_level == 0) and self.assistance_allowed:
+        if (
+            self.autonomy_level == 1 or self.autonomy_level == 0
+        ) and self.assistance_allowed:
             self.logger.info(
                 "Human-in-the-loop services are initialized for benchmark: {}".format(
                     self.benchmark_name
@@ -714,12 +731,18 @@ class SubmissionClient(BaseClient):
         ):
             self.video_completed = True
             self.logger.info("Video Completeness Verified: Ready to upload.")
-            self.print_box("Ready to upload the submission file: Do you want to upload or discard it?")
-            print("Please type anything and press 'Enter' to proceed the submission OR type 'discard' and press 'Enter' to discard it.")
+            self.print_box(
+                "Ready to upload the submission file: Do you want to upload or discard it?"
+            )
+            print(
+                "Please type anything and press 'Enter' to proceed the submission OR type 'discard' and press 'Enter' to discard it."
+            )
             # Upload video to AWS S3 server
             user_input = sys.stdin.readline().strip()
             if user_input.upper() == "DISCARD":
-                self.logger.info("Discarding this submission... You can still review the recorded video locally.")
+                self.logger.info(
+                    "Discarding this submission... You can still review the recorded video locally."
+                )
                 self.send_request(ShutdownRequest(type="shutdown_request"))
                 return
             else:
@@ -758,7 +781,6 @@ class SubmissionClient(BaseClient):
             self.key_frame_index += 1
             response = self.receive_response()
         return response
-
 
     def handle_task_finished(self, request, response) -> Trigger.Response:
         """
@@ -808,7 +830,7 @@ class SubmissionClient(BaseClient):
 
             if self.instruction_enabled:
                 self.update_task_instruction()
-            
+
             self.register_key_frame_hash()
             # Return the server's response
             return Trigger.Response(success=True, message=response.message)
@@ -1018,7 +1040,10 @@ class SubmissionClient(BaseClient):
                 else:
                     self.vision_pub.publish(
                         self.bridge.cv2_to_imgmsg(
-                            self.overlay_rgba_on_bgr(self.buffer_frame, current_vision_instruction), encoding="bgr8"
+                            self.overlay_rgba_on_bgr(
+                                self.buffer_frame, current_vision_instruction
+                            ),
+                            encoding="bgr8",
                         )
                     )
             else:
@@ -1048,12 +1073,9 @@ class SubmissionClient(BaseClient):
                         response = self.register_key_frame_hash()
                         if (
                             response is not None
-                            and response.message
-                            == "Key_Frame_Registered"
+                            and response.message == "Key_Frame_Registered"
                         ):
-                            self.logger.info(
-                                "Random key frame verified successfully"
-                            )
+                            self.logger.info("Random key frame verified successfully")
                         else:
                             self.logger.error(
                                 "Key frame verification failed: {}."
