@@ -102,7 +102,7 @@ class ConnectionTest:
         Test if the team qualification is successful
         """
         start_time = time.time()
-        self.send_loigin_request()
+        self.send_login_request()
         response = self.receive_login_response()
         if response is None or not response.success:
             self.print_box(f"Connection failed: Failed to receive message from server.")
@@ -123,7 +123,7 @@ class ConnectionTest:
         print("│ " + text + " │")
         print("└" + "─" * (length + 2) + "┘")
 
-    def send_loigin_request(self):
+    def send_login_request(self):
         """
         Send a request as JSON with a 4-byte length prefix
         """
