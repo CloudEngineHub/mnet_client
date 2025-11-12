@@ -156,7 +156,9 @@ class BaseClient(Node, ABC):
             self.cam_K, self.cam_width, self.cam_height = self.get_camera_info()
             self.camera_info_loaded = True
         except TimeoutError as e:
-            self.get_logger().warning(f"{e}, this could affect the execution of the task: grasping_in_clutters")
+            self.get_logger().warning(
+                f"{e}, this could affect the execution of the task: grasping_in_clutters"
+            )
         except AssertionError as e:
             self.get_logger().error(f"Camera info does not match the image size: {e}")
             exit()
@@ -174,7 +176,9 @@ class BaseClient(Node, ABC):
 
         self.current_language_instruction = None
         self.current_vision_instruction = None
-        self.vision_instruction_overlay = False  # if overlay the vision instruction with the camera image
+        self.vision_instruction_overlay = (
+            False  # if overlay the vision instruction with the camera image
+        )
 
     def topic_has_publishers(self) -> bool:
         """
@@ -188,12 +192,12 @@ class BaseClient(Node, ABC):
         """
         Get the camera intrinsic matrix from the camera info topic
         """
-        data = {'K': None, 'width': None, 'height': None}
+        data = {"K": None, "width": None, "height": None}
 
         def camera_info_callback(msg: CameraInfo):
-            data['K'] = np.array(msg.k).reshape(3, 3)
-            data['width'] = msg.width
-            data['height'] = msg.height
+            data["K"] = np.array(msg.k).reshape(3, 3)
+            data["width"] = msg.width
+            data["height"] = msg.height
             self.get_logger().info(f"Received CameraInfo from {self.camera_info_topic}")
             self.destroy_subscription(self.camera_info_sub)
 
@@ -204,19 +208,28 @@ class BaseClient(Node, ABC):
         end_time = self.get_clock().now() + rclpy.time.Duration(seconds=timeout)
         while rclpy.ok() and self.get_clock().now() < end_time:
             rclpy.spin_once(self, timeout_sec=0.1)
-            if data['K'] is not None:
+            if data["K"] is not None:
                 break
 
-        if data['K'] is None:
-            raise TimeoutError(f"No CameraInfo received on {self.camera_info_topic} within {timeout}s")
+        if data["K"] is None:
+            raise TimeoutError(
+                f"No CameraInfo received on {self.camera_info_topic} within {timeout}s"
+            )
 
-        W, H = self.buffer_frame.shape[1], self.buffer_frame.shape[0]  # Get the image size
-        assert H == data['height'] and W == data['width'], "Camera info does not match the image size"
+        W, H = (
+            self.buffer_frame.shape[1],
+            self.buffer_frame.shape[0],
+        )  # Get the image size
+        assert (
+            H == data["height"] and W == data["width"]
+        ), "Camera info does not match the image size"
 
-        if data['K'] is None:
-            raise TimeoutError(f"No CameraInfo received on {self.camera_info_topic} within {timeout}s")
+        if data["K"] is None:
+            raise TimeoutError(
+                f"No CameraInfo received on {self.camera_info_topic} within {timeout}s"
+            )
 
-        return data['K'], data['width'], data['height']
+        return data["K"], data["width"], data["height"]
 
     def check_ffmpeg_encoder(self, encoder_name: str) -> bool:
         """
@@ -246,7 +259,7 @@ class BaseClient(Node, ABC):
             rclpy.spin_once(self, timeout_sec=1.0)
             count += 1
         end_time = time.time()
-        self.calibrated_fps = count / (end_time - start_time) 
+        self.calibrated_fps = count / (end_time - start_time)
         self.logger.info(f"Calibrated FPS: {self.calibrated_fps}")
 
     def compress_video(self):
@@ -370,7 +383,8 @@ class BaseClient(Node, ABC):
         Decode a base64 image
         """
         return cv2.imdecode(
-            np.frombuffer(base64.b64decode(base64_image), np.uint8), cv2.IMREAD_UNCHANGED
+            np.frombuffer(base64.b64decode(base64_image), np.uint8),
+            cv2.IMREAD_UNCHANGED,
         )
 
     def parse_instruction(self, instruction):
@@ -382,11 +396,15 @@ class BaseClient(Node, ABC):
         )
         if not self.vision_instruction_overlay:
             self.current_vision_instruction = (
-                self.decode_base64_image_rgb(instruction.vision) if instruction.vision else None
+                self.decode_base64_image_rgb(instruction.vision)
+                if instruction.vision
+                else None
             )
         else:
             self.current_vision_instruction = (
-                self.decode_base64_image_rgba(instruction.vision) if instruction.vision else None
+                self.decode_base64_image_rgba(instruction.vision)
+                if instruction.vision
+                else None
             )
 
     def add_timestamp_to_image(self, cv_image):
@@ -412,7 +430,9 @@ class BaseClient(Node, ABC):
         """
         Overlay an RGBA image (foreground) onto a BGR image (background) and return the resulting BGR image
         """
-        fg_rgba = cv2.resize(fg_rgba, (bg_bgr.shape[1], bg_bgr.shape[0]), interpolation=cv2.INTER_AREA)
+        fg_rgba = cv2.resize(
+            fg_rgba, (bg_bgr.shape[1], bg_bgr.shape[0]), interpolation=cv2.INTER_AREA
+        )
 
         fg_rgb = fg_rgba[:, :, :3].astype(float)
         alpha = fg_rgba[:, :, 3].astype(float) / 255.0
