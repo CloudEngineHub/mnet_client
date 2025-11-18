@@ -309,23 +309,23 @@ class LocalTestClient(BaseClient):
                 value = task_pool.pop(key)
                 return value
 
-            pack_3_tasks = {
-                k: v for k, v in self.task_metadata.items() if v.get("level") == "3"
+            easy_level_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "easy"
             }
-            pack_4_tasks = {
-                k: v for k, v in self.task_metadata.items() if v.get("level") == "4"
+            medium_level_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "medium"
             }
-            pack_5_tasks = {
-                k: v for k, v in self.task_metadata.items() if v.get("level") == "5"
+            hard_level_tasks = {
+                k: v for k, v in self.task_metadata.items() if v.get("level") == "hard"
             }
 
             for idx in range(len(self.scoring_details_list)):
                 if idx in [0, 1, 2, 3, 4]:
-                    task = load_random_task(pack_3_tasks)
+                    task = load_random_task(easy_level_tasks)
                 elif idx in [5, 6, 7, 8, 9]:
-                    task = load_random_task(pack_4_tasks)
+                    task = load_random_task(medium_level_tasks)
                 else:
-                    task = load_random_task(pack_5_tasks)
+                    task = load_random_task(hard_level_tasks)
 
                 self.language_instructions.append("")
                 scene_id = task["layout"]
