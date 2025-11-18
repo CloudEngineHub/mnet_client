@@ -144,6 +144,53 @@ class MnetSceneReplica:
         self._compute_projection_matrix()
         self._compute_view_matrix()
 
+    def create_visual_only_bars(self):
+        length = 0.5          # length of each bar
+        half_length = length / 2.0
+        height = 0.005       # bar height
+        z_pos = height / 2.0  
+        color = [1, 0, 0, 1]  # red
+
+        bar_visual_x = p.createVisualShape(
+            shapeType=p.GEOM_BOX,
+            halfExtents=[half_length, height / 2, height / 2],
+            rgbaColor=color
+        )
+
+        p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=bar_visual_x,
+            baseCollisionShapeIndex=-1,
+            basePosition=np.array([0, +half_length, z_pos])+WORLD_OFFSET
+        )
+
+        p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=bar_visual_x,
+            baseCollisionShapeIndex=-1,
+            basePosition=np.array([0, -half_length, z_pos])+WORLD_OFFSET
+        )
+
+        bar_visual_y = p.createVisualShape(
+            shapeType=p.GEOM_BOX,
+            halfExtents=[height / 2, half_length, height / 2],
+            rgbaColor=color
+        )
+
+        p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=bar_visual_y,
+            baseCollisionShapeIndex=-1,
+            basePosition=np.array([+half_length, 0, z_pos])+WORLD_OFFSET
+        )
+
+        p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=bar_visual_y,
+            baseCollisionShapeIndex=-1,
+            basePosition=np.array([-half_length, 0, z_pos])+WORLD_OFFSET
+        )
+
     def load_assets(self):
         self.urdf_models = glob.glob(
             os.path.join(self.object_model_path, "**/model.urdf")
@@ -159,6 +206,7 @@ class MnetSceneReplica:
 
     def load_scene(self, scene_file):
         p.resetSimulation()
+        self.create_visual_only_bars()
         data = np.load(os.path.join(self.scene_path, scene_file), allow_pickle=True)
         model_names = data["model_names"]
         poses = data["poses"]
