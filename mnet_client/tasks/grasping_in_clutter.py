@@ -23,7 +23,7 @@ except Exception as e:
 APRILTAG_SIZE = 0.12
 APRILTAG_FAMILY = "tag36h11"
 PB_RENDER = p.ER_TINY_RENDERER
-WORLD_OFFSET = np.array([0.25, 0.25, 0.0])
+WORLD_OFFSET = np.array([0.35, 0.35, 0.0])
 CAMERA_NEAR = 0.05
 CAMERA_FAR = 10.0
 
