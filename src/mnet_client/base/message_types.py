@@ -197,6 +197,7 @@ class CameraConfigRequest(BaseModel):
     """
     Camera config request
     """
+
     type: Literal["camera_config_request"]
     task_config: dict
 
@@ -205,6 +206,7 @@ class CameraConfigResponse(BaseModel):
     """
     Camera config response
     """
+
     type: Literal["camera_config_response"]
     success: bool
     message: str

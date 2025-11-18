@@ -42,7 +42,7 @@ try:
         InstructionRequest,
         AssistanceRequest,
         SubmissionRequest,
-        CameraConfigRequest
+        CameraConfigRequest,
     )
 except ImportError as e:
     print(f"Error importing modules: {e}")
@@ -191,7 +191,7 @@ class SubmissionClient(BaseClient):
             if cv_image is None or cv_image.size == 0:
                 self.logger.error("Received empty image from camera.")
                 return
-            
+
             # Update the buffer frame
             self.buffer_frame = self.add_timestamp_to_image(cv_image)
 
@@ -212,9 +212,11 @@ class SubmissionClient(BaseClient):
                     return
 
                 # Hash code for the first frame
-                response =self.register_key_frame_hash()
+                response = self.register_key_frame_hash()
                 if response is None:
-                    self.logger.error("Failed to verify the first frame from the camera")
+                    self.logger.error(
+                        "Failed to verify the first frame from the camera"
+                    )
                     self.video_writer = None
                     return
                 # Recording starts now
@@ -436,13 +438,19 @@ class SubmissionClient(BaseClient):
         Main function to run the submission client
         """
         # Send team ID to server and check if the team is authenticated
-        self.logger.info("Do you accept the terms and conditions as detailed at https://manipulation-net.org/terms_and_conditions.html ? [yes/others]")
-        print("Please type in 'yes' and press 'Enter' to accept the terms and conditions OR type anything else and press 'Enter' to reject it.")
+        self.logger.info(
+            "Do you accept the terms and conditions as detailed at https://manipulation-net.org/terms_and_conditions.html ? [yes/others]"
+        )
+        print(
+            "Please type in 'yes' and press 'Enter' to accept the terms and conditions OR type anything else and press 'Enter' to reject it."
+        )
         user_input = sys.stdin.readline().strip()
         if user_input.upper() != "YES":
-            self.logger.info("You have not accepted the terms and conditions, exiting...")
+            self.logger.info(
+                "You have not accepted the terms and conditions, exiting..."
+            )
             return
-    
+
         with self._lock:
             try:
                 self.send_request(
@@ -489,15 +497,17 @@ class SubmissionClient(BaseClient):
             self.scoring_details_list = list(self.scoring_details.keys())
             self.total_tasks_number = len(self.scoring_details_list)
             self.instruction_enabled = task_response.instruction_enabled
-            self.vision_instruction_overlay = task_response.overlay_enabled                        
+            self.vision_instruction_overlay = task_response.overlay_enabled
             self.assistance_allowed = task_response.assistance_allowed
             if task_response.message:
                 self.logger.info("Server message: {}".format(task_response.message))
 
         if self.benchmark_name in AUTONOMOUS_ONLY_TASKS and (self.autonomy_level != 2):
-            self.logger.error(f"{self.benchmark_name} task only supports the fully autonomous mode, submission will exit")
+            self.logger.error(
+                f"{self.benchmark_name} task only supports the fully autonomous mode, submission will exit"
+            )
             exit()
-            
+
         if self.instruction_enabled:
             self.language_pub = rospy.Publisher(
                 "/mnet_client/current_language_instruction", String, queue_size=10
@@ -514,11 +524,11 @@ class SubmissionClient(BaseClient):
                     )
                     exit()
                 else:
-                    self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv = apriltag_detected
-                    self.logger.info(
-                        f"AprilTag is detected. Tag ID: {self.tag_id}"
+                    self.det, self.tag_id, self.corners, self.R_cw_cv, self.t_cw_cv = (
+                        apriltag_detected
                     )
-              
+                    self.logger.info(f"AprilTag is detected. Tag ID: {self.tag_id}")
+
                 self.send_request(
                     CameraConfigRequest(
                         type="camera_config_request",
@@ -531,14 +541,19 @@ class SubmissionClient(BaseClient):
                             "corners": self.corners.tolist(),
                             "R_cw_cv": self.R_cw_cv.tolist(),
                             "t_cw_cv": self.t_cw_cv.tolist(),
-                        }
+                        },
                     )
                 )
                 camera_config_response = self.receive_response()
-                if camera_config_response.type == "camera_config_response" and camera_config_response.success:
+                if (
+                    camera_config_response.type == "camera_config_response"
+                    and camera_config_response.success
+                ):
                     self.logger.info("Camera setup has been updated to the server")
                 else:
-                    self.logger.error("Failed to update the camera setup to the server, please contact the organizers")
+                    self.logger.error(
+                        "Failed to update the camera setup to the server, please contact the organizers"
+                    )
                     exit()
 
             self.send_request(
@@ -563,7 +578,9 @@ class SubmissionClient(BaseClient):
                 exit()
 
         # Initialize human in the loop services
-        if (self.autonomy_level == 1 or self.autonomy_level == 0) and self.assistance_allowed:
+        if (
+            self.autonomy_level == 1 or self.autonomy_level == 0
+        ) and self.assistance_allowed:
             self.logger.info(
                 "Human assistance services are initialized for benchmark: {}".format(
                     self.benchmark_name
@@ -715,12 +732,18 @@ class SubmissionClient(BaseClient):
         ):
             self.video_completed = True
             self.logger.info("Video Completeness Verified: Ready to upload.")
-            self.print_box("Ready to upload the submission file: Do you want to upload or discard it?")
-            print("Please type anything and press 'Enter' to proceed the submission OR type 'discard' and press 'Enter' to discard it.")
+            self.print_box(
+                "Ready to upload the submission file: Do you want to upload or discard it?"
+            )
+            print(
+                "Please type anything and press 'Enter' to proceed the submission OR type 'discard' and press 'Enter' to discard it."
+            )
             # Upload video to AWS S3 server
             user_input = sys.stdin.readline().strip()
             if user_input.upper() == "DISCARD":
-                self.logger.info("Discarding this submission... You can still review the recorded video locally.")
+                self.logger.info(
+                    "Discarding this submission... You can still review the recorded video locally."
+                )
                 self.send_request(ShutdownRequest(type="shutdown_request"))
                 return
             else:
@@ -1021,10 +1044,13 @@ class SubmissionClient(BaseClient):
                 else:
                     self.vision_pub.publish(
                         self.bridge.cv2_to_imgmsg(
-                            self.overlay_rgba_on_bgr(self.buffer_frame, current_vision_instruction), encoding="bgr8"
+                            self.overlay_rgba_on_bgr(
+                                self.buffer_frame, current_vision_instruction
+                            ),
+                            encoding="bgr8",
                         )
                     )
- 
+
             else:
                 no_image = Image()
                 no_image.header.stamp = rospy.Time.now()
