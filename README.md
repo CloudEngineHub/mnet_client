@@ -1,7 +1,10 @@
 <!--- # ManipulationNet: Benchmarking Real-World Robotic Manipulation at Scale -->
 
 <img src="docs/images/logo.png" style="zoom:20%;" />
-![](docs/images/overview.png)
+
+![overview](docs/images/overview.png)
+
+
 
 ## Overview
 
