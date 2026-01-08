@@ -14,7 +14,6 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config', ['config/team_config.json', 'config/banner.txt']),
-        (os.path.join('share', package_name, 'assets/peg_in_hole'), glob('assets/peg_in_hole/*')),
     ]+ [
         # place files preserving relative paths under share/my_tasks_pkg/assets
         ("share/" + package_name + "/assets/" + str(p.parent.relative_to("assets")), [str(p)])
