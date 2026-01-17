@@ -271,6 +271,19 @@ class LocalTestClient(BaseClient):
                     else None
                 )
 
+        elif self.task_name in ["cable_management"]:
+            self.instruction_enabled = True
+            from mnet_client.tasks import get_offset_coordinates, ALL_BASES
+            offset_coordinates, overall_actual_offsets = get_offset_coordinates()
+
+            for idx in range(len(self.scoring_details_list)):
+                pub_task = ALL_BASES[idx]
+                pub_task["test_coordinates"] = offset_coordinates[idx]
+                pub_task["coordinate_offsets"] = overall_actual_offsets[idx]
+
+                self.language_instructions.append(str(pub_task))
+                self.vision_instructions.append(None)
+
         elif self.task_name in ["grasping_in_clutter"]:
             self.instruction_enabled = True
             self.scene_render = MnetSceneReplica(

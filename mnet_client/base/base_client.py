@@ -34,10 +34,10 @@ except Exception as e:
 PACKAGE_NAME = "mnet_client"
 SERVER_IP = "3.21.8.9"
 SERVER_PORT = 50716
-AVAILABLE_TASKS = ["peg_in_hole", "block_arrangement", "grasping_in_clutter", "tabletop_manipulation"]
-INSTRUCTION_ENABLED_TASKS = ["block_arrangement", "grasping_in_clutter", "tabletop_manipulation"]
+AVAILABLE_TASKS = ["peg_in_hole", "block_arrangement", "grasping_in_clutter", "tabletop_manipulation", "cable_management"]
+INSTRUCTION_ENABLED_TASKS = ["block_arrangement", "grasping_in_clutter", "tabletop_manipulation", "cable_management"]
 OVERLAY_ENABLED_TASKS = ["grasping_in_clutter", "tabletop_manipulation"]
-AUTONOMOUS_ONLY_TASKS = ["block_arrangement", "grasping_in_clutter", "tabletop_manipulation"]
+AUTONOMOUS_ONLY_TASKS = ["block_arrangement", "grasping_in_clutter", "tabletop_manipulation", "cable_management"]
 APRILTAG_ENABLED_TASKS = OVERLAY_ENABLED_TASKS
 
 
