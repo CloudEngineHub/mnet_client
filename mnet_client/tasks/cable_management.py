@@ -75,14 +75,4 @@ def get_offset_coordinates():
 
 
 if __name__ == "__main__":
-    offset_coordinates, overall_actual_offsets = get_offset_coordinates()
-    print(offset_coordinates[0])
-    print(overall_actual_offsets[0])
-
-    print(offset_coordinates[1])
-    print(overall_actual_offsets[1])
-
-    print(offset_coordinates[2])
-    print(overall_actual_offsets[2])
-
-    print(str(TIER_6_BASE))
+    pass
