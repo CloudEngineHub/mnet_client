@@ -25,6 +25,14 @@ try:
         OVERLAY_ENABLED_TASKS,
         AUTONOMOUS_ONLY_TASKS,
         APRILTAG_ENABLED_TASKS,
+        ROS_TOPIC_CONTINUOUS_ASSISTANCE,
+        ROS_TOPIC_DISCRETE_ASSISTANCE,
+        ROS_TOPIC_CONNECTION_STATUS,
+        ROS_TOPIC_ONGOING_TASK,
+        ROS_TOPIC_LANGUAGE_INSTRUCTION,
+        ROS_TOPIC_VISION_INSTRUCTION,
+        ROS_TOPIC_TASK_SKIPPED,
+        ROS_TOPIC_TASK_FINISHED
     )
     from mnet_client.tasks import detect_apriltag, MnetSceneReplica
 
@@ -132,10 +140,10 @@ class LocalTestClient(BaseClient):
 
         # Initialize execution status services
         self.task_finished_service = self.create_service(
-            Trigger, "/mnet_client/current_task_finished", self.handle_task_finished
+            Trigger, ROS_TOPIC_TASK_FINISHED, self.handle_task_finished
         )
         self.task_skipped_service = self.create_service(
-            Trigger, "/mnet_client/current_task_skipped", self.handle_task_skipped
+            Trigger, ROS_TOPIC_TASK_SKIPPED, self.handle_task_skipped
         )
 
         self.camera_fps = self.calibrated_fps
@@ -143,21 +151,21 @@ class LocalTestClient(BaseClient):
         if self.autonomy_level == 1 or self.autonomy_level == 0:
             self.discrete_assistance_service = self.create_service(
                 Trigger,
-                "/mnet_client/discrete_assistance_update",
+                ROS_TOPIC_DISCRETE_ASSISTANCE,
                 self.handle_discrete_assistance,
             )
             self.continuous_assistance_service = self.create_service(
                 Trigger,
-                "/mnet_client/continuous_assistance_update",
+                ROS_TOPIC_CONTINUOUS_ASSISTANCE,
                 self.handle_continuous_assistance,
             )
 
         # Initialize connection status publisher
         self.connection_status_pub = self.create_publisher(
-            Bool, "mnet_client/connection_status", qos_profile=10
+            Bool, ROS_TOPIC_CONNECTION_STATUS, qos_profile=10
         )
         self.task_status_pub = self.create_publisher(
-            String, "mnet_client/ongoing_task", qos_profile=10
+            String, ROS_TOPIC_ONGOING_TASK, qos_profile=10
         )
         self.connection_status = False
         self.last_connection_check_time = time.time()
@@ -185,7 +193,6 @@ class LocalTestClient(BaseClient):
         )
 
         if self.task_name in ["block_arrangement"]:
-            self.instruction_enabled = True
             if os.path.exists(task_metadata_file_path):
                 with open(task_metadata_file_path, "r") as f:
                     self.task_metadata = json.load(f)
@@ -272,7 +279,9 @@ class LocalTestClient(BaseClient):
                 )
 
         elif self.task_name in ["cable_management"]:
-            self.instruction_enabled = True
+            self.logger.info("Overwriting ROS topic for cable_management task: 'current_language_instruction' -> 'board_configuration'")
+            global ROS_TOPIC_LANGUAGE_INSTRUCTION
+            ROS_TOPIC_LANGUAGE_INSTRUCTION = "/mnet_client/board_configuration"
             from mnet_client.tasks import get_offset_coordinates, ALL_BASES
             offset_coordinates, overall_actual_offsets = get_offset_coordinates()
 
@@ -608,10 +617,10 @@ class LocalTestClient(BaseClient):
 
         if self.instruction_enabled:
             self.language_pub = self.create_publisher(
-                String, "/mnet_client/current_language_instruction", qos_profile=1
+                String, ROS_TOPIC_LANGUAGE_INSTRUCTION, qos_profile=1
             )
             self.vision_pub = self.create_publisher(
-                Image, "/mnet_client/current_vision_instruction", qos_profile=1
+                Image, ROS_TOPIC_VISION_INSTRUCTION, qos_profile=1
             )
 
         # Start recording

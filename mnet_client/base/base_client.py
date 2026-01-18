@@ -41,6 +41,16 @@ AUTONOMOUS_ONLY_TASKS = ["block_arrangement", "grasping_in_clutter", "tabletop_m
 APRILTAG_ENABLED_TASKS = OVERLAY_ENABLED_TASKS
 
 
+ROS_TOPIC_LANGUAGE_INSTRUCTION = "/mnet_client/current_language_instruction"
+ROS_TOPIC_VISION_INSTRUCTION = "/mnet_client/current_vision_instruction"
+ROS_TOPIC_TASK_SKIPPED = "/mnet_client/current_task_skipped"
+ROS_TOPIC_TASK_FINISHED = "/mnet_client/current_task_finished"
+ROS_TOPIC_DISCRETE_ASSISTANCE = "/mnet_client/discrete_assistance_update"
+ROS_TOPIC_CONTINUOUS_ASSISTANCE = "/mnet_client/continuous_assistance_update"
+ROS_TOPIC_ONGOING_TASK = "/mnet_client/ongoing_task"
+ROS_TOPIC_CONNECTION_STATUS = "/mnet_client/connection_status"
+
+
 class BaseClient(Node, ABC):
     def __init__(self, name: str):
         build_info = cv2.getBuildInformation()
