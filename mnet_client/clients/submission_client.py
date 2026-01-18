@@ -32,6 +32,14 @@ try:
         OVERLAY_ENABLED_TASKS,
         AUTONOMOUS_ONLY_TASKS,
         APRILTAG_ENABLED_TASKS,
+        ROS_TOPIC_CONTINUOUS_ASSISTANCE,
+        ROS_TOPIC_DISCRETE_ASSISTANCE,
+        ROS_TOPIC_CONNECTION_STATUS,
+        ROS_TOPIC_ONGOING_TASK,
+        ROS_TOPIC_LANGUAGE_INSTRUCTION,
+        ROS_TOPIC_VISION_INSTRUCTION,
+        ROS_TOPIC_TASK_SKIPPED,
+        ROS_TOPIC_TASK_FINISHED
     )
     from mnet_client.base import (
         PingRequest,
@@ -137,18 +145,18 @@ class SubmissionClient(BaseClient):
 
         # Initialize execution status services
         self.task_finished_service = self.create_service(
-            Trigger, "mnet_client/current_task_finished", self.handle_task_finished
+            Trigger, ROS_TOPIC_TASK_FINISHED, self.handle_task_finished
         )
         self.task_skipped_service = self.create_service(
-            Trigger, "mnet_client/current_task_skipped", self.handle_task_skipped
+            Trigger, ROS_TOPIC_TASK_SKIPPED, self.handle_task_skipped
         )
 
         # Initialize connection status publisher
         self.connection_status_pub = self.create_publisher(
-            Bool, "mnet_client/connection_status", qos_profile=10
+            Bool, ROS_TOPIC_CONNECTION_STATUS, qos_profile=10
         )
         self.task_status_pub = self.create_publisher(
-            String, "mnet_client/ongoing_task", qos_profile=10
+            String, ROS_TOPIC_ONGOING_TASK, qos_profile=10
         )
         self.connection_status = False
 
@@ -501,13 +509,18 @@ class SubmissionClient(BaseClient):
                 "Block arrangement task only supports the fully autonomous mode, submission will exit"
             )
             exit()
+        
+        if self.benchmark_name in ["cable_management"]:
+            self.logger.info("Overwriting ROS topic for cable_management task: 'current_language_instruction' -> 'board_configuration'")
+            global ROS_TOPIC_LANGUAGE_INSTRUCTION
+            ROS_TOPIC_LANGUAGE_INSTRUCTION = "/mnet_client/board_configuration"
 
         if self.instruction_enabled:
             self.language_pub = self.create_publisher(
-                String, "/mnet_client/current_language_instruction", qos_profile=1
+                String, ROS_TOPIC_LANGUAGE_INSTRUCTION, qos_profile=1
             )
             self.vision_pub = self.create_publisher(
-                Image, "/mnet_client/current_vision_instruction", qos_profile=1
+                Image, ROS_TOPIC_VISION_INSTRUCTION, qos_profile=1
             )
 
             if self.vision_instruction_overlay:
@@ -583,12 +596,12 @@ class SubmissionClient(BaseClient):
             )
             self.discrete_assistance_service = self.create_service(
                 Trigger,
-                "mnet_client/discrete_assistance_update",
+                ROS_TOPIC_DISCRETE_ASSISTANCE,
                 self.handle_discrete_assistance,
             )
             self.continuous_assistance_service = self.create_service(
                 Trigger,
-                "mnet_client/continuous_assistance_update",
+                ROS_TOPIC_CONTINUOUS_ASSISTANCE,
                 self.handle_continuous_assistance,
             )
 

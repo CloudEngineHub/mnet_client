@@ -168,7 +168,7 @@ class BaseClient(Node, ABC):
             self.camera_info_loaded = True
         except TimeoutError as e:
             self.get_logger().warning(
-                f"{e}, this could affect the execution of the task: grasping_in_clutters"
+                f"{e}, this could affect the execution of the task: {OVERLAY_ENABLED_TASKS}"
             )
         except AssertionError as e:
             self.get_logger().error(f"Camera info does not match the image size: {e}")
