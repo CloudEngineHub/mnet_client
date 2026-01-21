@@ -196,6 +196,8 @@ class BaseClient(Node, ABC):
         Check if topic exists AND has publishers
         """
         assert self.camera_topic is not None, "Camera topic is not set"
+        # spin once to get publisher info
+        rclpy.spin_once(self, timeout_sec=0.5)
         publishers = self.get_publishers_info_by_topic(self.camera_topic)
         return len(publishers) > 0
 
