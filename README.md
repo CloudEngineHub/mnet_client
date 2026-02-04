@@ -18,6 +18,8 @@ Select your interested benchmark task [here](https://manipulation-net.org/index.
 
 ## News
 
+[**2026-01-28**] The mnet-client has been updated for the cable_management task. 
+
 [**2026-01-01**] The mnet-client has been updated for the language-conditioned tabletop_manipulation task (CameraInfo will be required). 
 
 [**2025-11-12**] The mnet-client has been updated for the grasping_in_clutter task (CameraInfo will be required). Please check the newest docs, **update** your environment and your client before use.
