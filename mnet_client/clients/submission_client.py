@@ -506,7 +506,7 @@ class SubmissionClient(BaseClient):
 
         if self.benchmark_name in AUTONOMOUS_ONLY_TASKS and (self.autonomy_level != 2):
             self.logger.error(
-                "Block arrangement task only supports the fully autonomous mode, submission will exit"
+                f"{self.benchmark_name} task only supports the fully autonomous mode, submission will exit"
             )
             exit()
         

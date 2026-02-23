@@ -37,7 +37,7 @@ SERVER_PORT = 50716
 AVAILABLE_TASKS = ["peg_in_hole", "block_arrangement", "grasping_in_clutter", "tabletop_manipulation", "cable_management"]
 INSTRUCTION_ENABLED_TASKS = ["block_arrangement", "grasping_in_clutter", "tabletop_manipulation", "cable_management"]
 OVERLAY_ENABLED_TASKS = ["grasping_in_clutter", "tabletop_manipulation"]
-AUTONOMOUS_ONLY_TASKS = ["block_arrangement", "grasping_in_clutter", "tabletop_manipulation", "cable_management"]
+AUTONOMOUS_ONLY_TASKS = ["block_arrangement", "tabletop_manipulation"]
 APRILTAG_ENABLED_TASKS = OVERLAY_ENABLED_TASKS
 
 

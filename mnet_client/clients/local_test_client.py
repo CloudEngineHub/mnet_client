@@ -126,7 +126,7 @@ class LocalTestClient(BaseClient):
             self.autonomy_level == 1 or self.autonomy_level == 0
         ):
             self.logger.info(
-                "Human-in-the-loop and Teleoperation mode are not supported for block arrangement task"
+                f"Human-in-the-loop and Teleoperation mode are not supported for {self.task_name} task"
             )
             exit()
 
