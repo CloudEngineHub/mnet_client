@@ -103,6 +103,7 @@ class BaseClient(Node, ABC):
         self.team_unique_code = team_config["team_unique_code"]
         self.camera_topic = team_config["camera_image_topic"]
         self.camera_info_topic = team_config["camera_info_topic"]
+        self.anonymous_submission = team_config["anonymous_submission"]
         self.nvenc_enabled = False
         self.camera_info_loaded = False
 
