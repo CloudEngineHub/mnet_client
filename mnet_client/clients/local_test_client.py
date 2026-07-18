@@ -297,6 +297,7 @@ class LocalTestClient(BaseClient):
             self.instruction_enabled = True
             self.scene_render = MnetSceneReplica(
                 self.package_path,
+                self.task_name,
                 self.cam_K,
                 self.cam_width,
                 self.cam_height,
